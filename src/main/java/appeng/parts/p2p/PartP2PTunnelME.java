@@ -234,8 +234,9 @@ public class PartP2PTunnelME extends PartP2PTunnel<PartP2PTunnelME> implements I
 					}
 					catch (FailedConnection e)
 					{
-						AELog.error( e );
-						// :(
+						final TileEntity start = this.getTile();
+						final TileEntity end = me.getTile();
+						AELog.warning( "Failed to establish a ME P2P Tunnel between the tunnels at [x=%d, y=%d, z=%d] and [x=%d, y=%d, z=%d]", start.xCoord, start.yCoord, start.zCoord, end.xCoord, end.yCoord, end.zCoord );
 					}
 				}
 			}
