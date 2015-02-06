@@ -22,9 +22,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
+import appeng.api.networking.security.IActionHost;
+import appeng.api.networking.security.MachineSource;
+import appeng.api.networking.security.PlayerSource;
+import appeng.parts.AEBasePart;
 import com.google.common.base.Stopwatch;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
 import appeng.api.AEApi;
@@ -178,6 +184,7 @@ public class CraftingJob implements Runnable, ICraftingJob
 				}
 
 				AELog.crafting( "------------- " + this.getByteTotal() + "b real" + timer.elapsed( TimeUnit.MILLISECONDS ) + "ms" );
+				logSourceToCraftingLog();
 				// if ( mode == Actionable.MODULATE )
 				// craftingInventory.moveItemsToStorage( storage );
 			}
@@ -204,6 +211,7 @@ public class CraftingJob implements Runnable, ICraftingJob
 					}
 
 					AELog.crafting( "------------- " + this.getByteTotal() + "b simulate" + timer.elapsed( TimeUnit.MILLISECONDS ) + "ms" );
+					logSourceToCraftingLog();
 				}
 				catch (CraftBranchFailure e1)
 				{
@@ -241,6 +249,52 @@ public class CraftingJob implements Runnable, ICraftingJob
 
 		this.finish();
 
+	}
+
+	public void logSourceToCraftingLog()
+	{
+		try
+		{
+			if (this.actionSrc instanceof MachineSource)
+			{
+				MachineSource src = (MachineSource) this.actionSrc;
+				String machineType = src.via.getClass().getName();
+				if (src.via instanceof AEBasePart)
+				{
+					TileEntity te = ((AEBasePart) src.via).getTile();
+					
+					String position = "DIM" + te.getWorldObj().provider.dimensionId + "(" + 
+						(int) Math.floor(te.xCoord) + ", " + 
+						(int) Math.floor(te.yCoord) + ", " + 
+						(int) Math.floor(te.zCoord) + ")";
+					
+					AELog.crafting( "-------------	Crafting by machine (" + machineType + ") at " + position );
+					
+				} 
+				else
+				{
+					AELog.crafting( "-------------	Crafting by machine not implementing AEBasePart (" + machineType + ")" );
+				}
+			} 
+			else if (this.actionSrc instanceof PlayerSource)
+			{
+				PlayerSource src = (PlayerSource) this.actionSrc;
+				EntityPlayer player = src.player;
+				
+				String position = "DIM" + player.getEntityWorld().provider.dimensionId + " (" +
+					(int) Math.floor(player.posX) + ", " + 
+					(int) Math.floor(player.posY) + ", " + 
+					(int) Math.floor(player.posZ);
+				
+				AELog.crafting( "------------- Crafting by player (" + player.getDisplayName() + ") at " + position );
+			}
+		} 
+		catch (Exception e)
+		{
+			// we don't want to this to interfere with ANYTHING so print the stack trace and bail
+			AELog.warning( "Unable to log crafting source to crafting log !" );
+			e.printStackTrace();
+		}
 	}
 
 	public void finish()
